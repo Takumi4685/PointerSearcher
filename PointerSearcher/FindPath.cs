@@ -23,7 +23,7 @@ namespace PointerSearcher
 
         public override String ToString(String org)
         {
-            return org + "+" + offset.ToString("X");
+            return org + "+" + offset.ToString("X2");
         }
         public override long ParseAddress(long currentAddress, long currentData)
         {
