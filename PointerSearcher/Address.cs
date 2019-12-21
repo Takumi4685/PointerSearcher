@@ -7,7 +7,7 @@ namespace PointerSearcher
 
         public override int GetHashCode()
         {
-            return this.type.GetHashCode()^this.offset.GetHashCode();
+            return this.type.GetHashCode() ^ this.offset.GetHashCode();
         }
 
         public override bool Equals(object obj)

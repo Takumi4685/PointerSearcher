@@ -43,7 +43,7 @@ namespace PointerSearcher
     }
     class FindPath
     {
-        public FindPath( int offsetNum,long offsetAddress)
+        public FindPath(int offsetNum, long offsetAddress)
         {
             maxOffsetNum = offsetNum;
             maxOffsetAddress = offsetAddress;

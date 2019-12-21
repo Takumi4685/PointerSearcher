@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace PointerSearcher
 {
@@ -156,10 +155,11 @@ namespace PointerSearcher
             ReadIndicate();
 
             //foreach (NoexsDumpIndex x in indices)
-            for(int index=0;index<indices.Count;index++)
+            for (int index = 0; index < indices.Count; index++)
             {
                 NoexsDumpIndex x = indices[index];
-                if (token.IsCancellationRequested) {
+                if (token.IsCancellationRequested)
+                {
                     token.ThrowIfCancellationRequested();
                 }
                 if (!IsMainHeapAddress(x.address))
@@ -189,7 +189,7 @@ namespace PointerSearcher
                     int loopcnt = readSize / 8;
                     for (int i = 0; i < loopcnt; i++)
                     {
-                        long tmp_data = BitConverter.ToInt64(buff,i<<3);
+                        long tmp_data = BitConverter.ToInt64(buff, i << 3);
                         if (IsHeapAddress(tmp_data))
                         {
                             Address from = new Address(type, address);
@@ -199,7 +199,7 @@ namespace PointerSearcher
                         address += 8;
                     }
                 }
-                prog.Report((int)(100 * ( index + 1) / indices.Count));
+                prog.Report((int)(100 * (index + 1) / indices.Count));
             }
             pointerInfo.MakeList();
             sw.Stop();
@@ -212,7 +212,7 @@ namespace PointerSearcher
             ReadIndicate();
 
             long address = mainStartAddress;
-            for (int i = path.Count-1; i >=0; i--)
+            for (int i = path.Count - 1; i >= 0; i--)
             {
                 long data = ReadLittleEndianInt64(address);
                 address = path[i].ParseAddress(address, data);

@@ -7,7 +7,7 @@ namespace PointerSearcher
     {
         public PointerInfo()
         {
-            tmpDic = new Dictionary<Address,PointedAddress>();
+            tmpDic = new Dictionary<Address, PointedAddress>();
         }
         public void AddPointer(Address from, Address to)
         {
@@ -17,13 +17,14 @@ namespace PointerSearcher
             {
                 add = new PointedAddress(to);
 
-                tmpDic.Add(to,add);
+                tmpDic.Add(to, add);
             }
             tmpDic[to].pointedfrom.Add(from);
         }
         public int FindNearest(IComparable<Address> target)
         {
-            if (pointedList.Count == 0) {
+            if (pointedList.Count == 0)
+            {
                 return -1;
             }
 
@@ -56,7 +57,7 @@ namespace PointerSearcher
             tmpDic = null;
             pointedList.Sort();
         }
-        private Dictionary<Address,PointedAddress> tmpDic;
+        private Dictionary<Address, PointedAddress> tmpDic;
         public List<PointedAddress> pointedList;
 
     }

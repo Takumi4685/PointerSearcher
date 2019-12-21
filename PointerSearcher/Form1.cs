@@ -42,7 +42,7 @@ namespace PointerSearcher
 
 
                 IDumpDataReader reader = CreateDumpDataReader(dataGridView1.Rows[0]);
-                if(reader == null)
+                if (reader == null)
                 {
                     throw new Exception("Invalid input" + Environment.NewLine + "Check highlighted cell");
                 }
@@ -60,7 +60,7 @@ namespace PointerSearcher
 
                 buttonSearch.Enabled = true;
             }
-            catch(System.OperationCanceledException ex)
+            catch (System.OperationCanceledException ex)
             {
                 SetProgressBar(0);
                 System.Media.SystemSounds.Asterisk.Play();
@@ -106,9 +106,10 @@ namespace PointerSearcher
                 {
                     MessageBox.Show("Offset Range must be greater or equal to 0", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-                else {
+                else
+                {
                     buttonCancel.Enabled = true;
-                    
+
                     cancel = new CancellationTokenSource();
                     Progress<double> prog = new Progress<double>(AddProgressBar);
 
@@ -116,7 +117,7 @@ namespace PointerSearcher
 
                     await Task.Run(() =>
                     {
-                        find.Search(cancel.Token, prog,100.0, info, maxDepth, new List<IReverseOrderPath>(), address, result);
+                        find.Search(cancel.Token, prog, 100.0, info, maxDepth, new List<IReverseOrderPath>(), address, result);
                     });
 
                     SetProgressBar(100);
@@ -199,7 +200,7 @@ namespace PointerSearcher
                 {
                     DataGridViewRow row = dataGridView1.Rows[i];
                     ClearRowBackColor(row);
-                    if ( IsBlankRow(row))
+                    if (IsBlankRow(row))
                     {
                         continue;
                     }
@@ -227,7 +228,6 @@ namespace PointerSearcher
 
                 result = await Task.Run(() => FindPath.NarrowDown(cancel.Token, prog, result, dumps));
 
-                PrintPath();
                 SetProgressBar(100);
                 System.Media.SystemSounds.Asterisk.Play();
             }
@@ -247,6 +247,7 @@ namespace PointerSearcher
                 {
                     cancel.Dispose();
                 }
+                PrintPath();
 
                 buttonRead.Enabled = true;
                 buttonSearch.Enabled = true;
@@ -279,8 +280,8 @@ namespace PointerSearcher
         private IDumpDataReader CreateDumpDataReader(DataGridViewRow row)
         {
             bool canCreate = true;
-            String path ="";
-            long mainStart=-1;
+            String path = "";
+            long mainStart = -1;
             long mainEnd = -1;
             long heapStart = -1;
             long heapEnd = -1;
@@ -299,7 +300,8 @@ namespace PointerSearcher
                 }
             }
 
-            if (row.Cells[0].Value !=null ) {
+            if (row.Cells[0].Value != null)
+            {
                 path = row.Cells[0].Value.ToString();
             }
             if ((path == "") || !System.IO.File.Exists(path))
@@ -352,11 +354,11 @@ namespace PointerSearcher
                 row.Cells[5].Style.BackColor = Color.Red;
                 canCreate = false;
             }
-            if( !canCreate)
+            if (!canCreate)
             {
                 return null;
             }
-            if(mainEnd <= mainStart)
+            if (mainEnd <= mainStart)
             {
                 row.Cells[1].Style.BackColor = Color.Red;
                 row.Cells[2].Style.BackColor = Color.Red;
@@ -368,7 +370,7 @@ namespace PointerSearcher
                 row.Cells[4].Style.BackColor = Color.Red;
                 canCreate = false;
             }
-            if((target < heapStart)||(heapEnd<target))
+            if ((target < heapStart) || (heapEnd < target))
             {
                 row.Cells[5].Style.BackColor = Color.Red;
                 canCreate = false;
@@ -393,7 +395,7 @@ namespace PointerSearcher
         private void AddProgressBar(double percent)
         {
             progressTotal += percent;
-            if(progressTotal> 100)
+            if (progressTotal > 100)
             {
                 progressTotal = 100;
             }
