@@ -119,6 +119,11 @@ namespace PointerSearcher
 
         private void ReadIndicate()
         {
+            if(indices != null)
+            {
+                //if already read indices,skip reading
+                return;
+            }
             indices = new List<NoexsDumpIndex>();
             fileStream.BaseStream.Seek(0, SeekOrigin.Begin);
 
