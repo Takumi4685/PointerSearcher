@@ -1,30 +1,31 @@
 # Pointer Searcher
-created by Takumi4685.
-
 ## warning
-* this tool is alpha version,and may has many bugs.  
+* this tool is alpha version,and may has many bugs.please use at yourown risk  
 * this tool uses huge amout of memory,maybe more than 400 MB.
-* each process is too slow.  
+* each process is very slow.  
 * I'm not going to fix bug,improve memory usage and calculating speed,enhancement.  
-so don't request to me.
+so don't request to me.  
 
 ## how to use
 ### preparing
-1. dump all r/w memory by using noexs and search non static address(target address you want to make a pointer code).
+1. dump all r/w memory by using Noexs and search non static address(target address you want to make a pointer code).
 1. memo main start address,main end address,heap start address, heap end address and target address.  
-it's better to restart game,and dump another data and memo to narrow down pointer codes.
+it's better to restart game,and dump another data and memo to narrow down search results.
 
 ### search pointer
-1. launch pointer searcher
-1. fill out 1st row
+1. launch pointer searcher  
+1. fill out 1st row  
 1. select `Read 1st Dump Data` button  
-this process will takes 10-20 min or more  
-`Reset and Search` button will be enabled when process finished
+this process will takes few minutes  
+`Reset and Search` button will be enabled when process finished  
 1. After setting search option below,select `Read 1st Dump Data` button  
 Max Depth : Max pointer depth  
-Offset Num : Num of address,which is pointed from another address,around searching address  
-Offset Range : Max offset range  
-calculating cost will be increase by Max Depth power of Offset Num
+Offset Range : Search range from target/pointer located address  
+Offset Num : Search num of nearest pointed address from target/pointer located address  
+For example,If Offset Num=1,you will find`[[main+B000]+10]+100` in the case below  
+And if Offset Num=2,you will find`[[main+A000]+20]+200` in addition  
+![Offset Num](https://user-images.githubusercontent.com/59052622/71303457-58fe1a00-23fc-11ea-9031-4edc62a95fd0.png)  
+calculating cost will be O(N<sup>N*D</sup>) (D:Max Depth,N:Offset Num)  
 1. If too many results,get another dump data and fill out 2nd and subsequent row,select `Narrow Down Result`
 
 # link
@@ -36,9 +37,13 @@ https://zit866.hatenablog.com/entry/2019/12/17/012933
 * ZiT866 : thanks to making tutorial.
 
 # change log
+*v0.03*  
+[bugfix]actual search depth was MaxDepth+1 by mistake  
+[improve]change UI to show progress  
+
 *v0.02*  
 [bugfix]can't find pointer that includes +00h offset  
 [improve]1st read become faster  
 
 *v0.01*  
-    first release
+first release
