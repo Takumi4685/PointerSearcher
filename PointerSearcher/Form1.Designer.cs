@@ -45,26 +45,29 @@
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
+            this.progressBar1 = new System.Windows.Forms.ProgressBar();
+            this.buttonCancel = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.SuspendLayout();
             // 
             // buttonRead
             // 
-            this.buttonRead.Location = new System.Drawing.Point(12, 231);
+            this.buttonRead.Location = new System.Drawing.Point(14, 214);
             this.buttonRead.Name = "buttonRead";
             this.buttonRead.Size = new System.Drawing.Size(158, 23);
             this.buttonRead.TabIndex = 0;
             this.buttonRead.Text = "Read 1st Dump Data";
             this.buttonRead.UseVisualStyleBackColor = true;
-            this.buttonRead.Click += new System.EventHandler(this.button1_Click);
+            this.buttonRead.Click += new System.EventHandler(this.buttonRead_Click);
             // 
             // textBox1
             // 
-            this.textBox1.Location = new System.Drawing.Point(12, 268);
+            this.textBox1.Location = new System.Drawing.Point(12, 243);
             this.textBox1.Multiline = true;
             this.textBox1.Name = "textBox1";
             this.textBox1.ReadOnly = true;
-            this.textBox1.Size = new System.Drawing.Size(646, 113);
+            this.textBox1.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+            this.textBox1.Size = new System.Drawing.Size(646, 138);
             this.textBox1.TabIndex = 1;
             // 
             // dataGridView1
@@ -87,37 +90,43 @@
             // 
             // ColumnPath
             // 
-            this.ColumnPath.HeaderText = "ColumnPath";
+            this.ColumnPath.HeaderText = "Path";
             this.ColumnPath.Name = "ColumnPath";
+            this.ColumnPath.ToolTipText = "Path of Noexs dump data";
             // 
             // ColumnMainStart
             // 
             this.ColumnMainStart.HeaderText = "MainStart";
             this.ColumnMainStart.Name = "ColumnMainStart";
+            this.ColumnMainStart.ToolTipText = "main start address";
             // 
             // ColumnMainEnd
             // 
             this.ColumnMainEnd.HeaderText = "MainEnd";
             this.ColumnMainEnd.Name = "ColumnMainEnd";
+            this.ColumnMainEnd.ToolTipText = "main end address";
             // 
             // ColumnHeapStart
             // 
             this.ColumnHeapStart.HeaderText = "HeapStart";
             this.ColumnHeapStart.Name = "ColumnHeapStart";
+            this.ColumnHeapStart.ToolTipText = "heap start address";
             // 
             // ColumnHeapEnd
             // 
             this.ColumnHeapEnd.HeaderText = "HeapEnd";
             this.ColumnHeapEnd.Name = "ColumnHeapEnd";
+            this.ColumnHeapEnd.ToolTipText = "heap end address";
             // 
             // ColumnTargetAddress
             // 
             this.ColumnTargetAddress.HeaderText = "TargetAddress";
             this.ColumnTargetAddress.Name = "ColumnTargetAddress";
+            this.ColumnTargetAddress.ToolTipText = "address you want to find a pointer of this dump data";
             // 
             // buttonSearch
             // 
-            this.buttonSearch.Location = new System.Drawing.Point(257, 231);
+            this.buttonSearch.Location = new System.Drawing.Point(257, 214);
             this.buttonSearch.Name = "buttonSearch";
             this.buttonSearch.Size = new System.Drawing.Size(158, 23);
             this.buttonSearch.TabIndex = 3;
@@ -148,7 +157,7 @@
             // 
             // buttonNarrowDown
             // 
-            this.buttonNarrowDown.Location = new System.Drawing.Point(500, 231);
+            this.buttonNarrowDown.Location = new System.Drawing.Point(500, 214);
             this.buttonNarrowDown.Name = "buttonNarrowDown";
             this.buttonNarrowDown.Size = new System.Drawing.Size(158, 23);
             this.buttonNarrowDown.TabIndex = 7;
@@ -183,11 +192,30 @@
             this.label3.TabIndex = 10;
             this.label3.Text = "OffsetRange";
             // 
+            // progressBar1
+            // 
+            this.progressBar1.Location = new System.Drawing.Point(12, 388);
+            this.progressBar1.Name = "progressBar1";
+            this.progressBar1.Size = new System.Drawing.Size(565, 23);
+            this.progressBar1.TabIndex = 11;
+            // 
+            // buttonCancel
+            // 
+            this.buttonCancel.Location = new System.Drawing.Point(583, 388);
+            this.buttonCancel.Name = "buttonCancel";
+            this.buttonCancel.Size = new System.Drawing.Size(75, 23);
+            this.buttonCancel.TabIndex = 12;
+            this.buttonCancel.Text = "Cancel";
+            this.buttonCancel.UseVisualStyleBackColor = true;
+            this.buttonCancel.Click += new System.EventHandler(this.buttonCancel_Click_1);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(674, 392);
+            this.ClientSize = new System.Drawing.Size(674, 417);
+            this.Controls.Add(this.buttonCancel);
+            this.Controls.Add(this.progressBar1);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
@@ -200,7 +228,7 @@
             this.Controls.Add(this.textBox1);
             this.Controls.Add(this.buttonRead);
             this.Name = "Form1";
-            this.Text = "PointerSearcher 0.02";
+            this.Text = "PointerSearcher 0.03";
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -212,12 +240,6 @@
         private System.Windows.Forms.Button buttonRead;
         private System.Windows.Forms.TextBox textBox1;
         private System.Windows.Forms.DataGridView dataGridView1;
-        private System.Windows.Forms.DataGridViewTextBoxColumn ColumnPath;
-        private System.Windows.Forms.DataGridViewTextBoxColumn ColumnMainStart;
-        private System.Windows.Forms.DataGridViewTextBoxColumn ColumnMainEnd;
-        private System.Windows.Forms.DataGridViewTextBoxColumn ColumnHeapStart;
-        private System.Windows.Forms.DataGridViewTextBoxColumn ColumnHeapEnd;
-        private System.Windows.Forms.DataGridViewTextBoxColumn ColumnTargetAddress;
         private System.Windows.Forms.Button buttonSearch;
         private System.Windows.Forms.TextBox textBoxDepth;
         private System.Windows.Forms.TextBox textBoxOffsetNum;
@@ -226,6 +248,14 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.ProgressBar progressBar1;
+        private System.Windows.Forms.Button buttonCancel;
+        private System.Windows.Forms.DataGridViewTextBoxColumn ColumnPath;
+        private System.Windows.Forms.DataGridViewTextBoxColumn ColumnMainStart;
+        private System.Windows.Forms.DataGridViewTextBoxColumn ColumnMainEnd;
+        private System.Windows.Forms.DataGridViewTextBoxColumn ColumnHeapStart;
+        private System.Windows.Forms.DataGridViewTextBoxColumn ColumnHeapEnd;
+        private System.Windows.Forms.DataGridViewTextBoxColumn ColumnTargetAddress;
     }
 }
 

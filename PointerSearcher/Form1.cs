@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -20,84 +21,127 @@ namespace PointerSearcher
             textBoxOffsetAddress.Text = maxOffsetAddress.ToString("X");
             buttonSearch.Enabled = false;
             buttonNarrowDown.Enabled = false;
+            buttonCancel.Enabled = false;
+            progressBar1.Maximum = 100;
+
             result = new List<List<IReverseOrderPath>>();
         }
         private PointerInfo info;
         private int maxDepth;
         private int maxOffsetNum;
         private long maxOffsetAddress;
-        private Task readTask;
-        private Task searchTask;
         private List<List<IReverseOrderPath>> result;
-        private void button1_Click(object sender, EventArgs e)
+        private CancellationTokenSource cancel = null;
+        private double progressTotal;
+        private async void buttonRead_Click(object sender, EventArgs e)
         {
+            SetProgressBar(0);
             try
             {
+                buttonRead.Enabled = false;
+
 
                 IDumpDataReader reader = CreateDumpDataReader(dataGridView1.Rows[0]);
                 if(reader == null)
                 {
-                    return;
+                    throw new Exception("Invalid input" + Environment.NewLine + "Check highlighted cell");
                 }
-                readTask = Task.Run(() =>
-                {
-                    ReadExec(reader);
-                });
                 buttonSearch.Enabled = false;
                 buttonNarrowDown.Enabled = false;
-            }
-            catch
-            {
+                buttonCancel.Enabled = true;
 
+                cancel = new CancellationTokenSource();
+                Progress<int> prog = new Progress<int>(SetProgressBar);
+
+                info = await Task.Run(() => reader.Read(cancel.Token, prog));
+
+                SetProgressBar(100);
+                System.Media.SystemSounds.Asterisk.Play();
+
+                buttonSearch.Enabled = true;
+            }
+            catch(System.OperationCanceledException ex)
+            {
+                SetProgressBar(0);
+                System.Media.SystemSounds.Asterisk.Play();
+            }
+            catch (Exception ex)
+            {
+                SetProgressBar(0);
+                MessageBox.Show("Read Failed" + Environment.NewLine + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                if (cancel != null)
+                {
+                    cancel.Dispose();
+                }
+
+                buttonCancel.Enabled = false;
+                buttonRead.Enabled = true;
             }
         }
-        private void ReadExec(IDumpDataReader reader)
+        private async void buttonSearch_Click(object sender, EventArgs e)
         {
-            PointerInfo tmp = reader.Read();
-            ReadEndDelegate de = new ReadEndDelegate(ReadEnd);
-            this.Invoke(de, tmp);
-        }
-        delegate void ReadEndDelegate(PointerInfo result);
-        private void ReadEnd(PointerInfo result)
-        {
-            info = result;
-            buttonSearch.Enabled = true;
-            System.Media.SystemSounds.Asterisk.Play();
-        }
-        private void buttonSearch_Click(object sender, EventArgs e)
-        {
-            maxDepth = Convert.ToInt32(textBoxDepth.Text);
-            maxOffsetNum = Convert.ToInt32(textBoxOffsetNum.Text);
-            maxOffsetAddress = Convert.ToInt32(textBoxOffsetAddress.Text, 16);
-            long heapStart = Convert.ToInt64(dataGridView1.Rows[0].Cells[3].Value.ToString(), 16); //0x4535400000;
-            long targetAddress = Convert.ToInt64(dataGridView1.Rows[0].Cells[5].Value.ToString(), 16); //0x45824F6F38;
-            Address address = new Address(MemoryType.HEAP, targetAddress - heapStart);
-
-            searchTask = Task.Run(() =>
-            {
-                SearchExec(info, maxDepth, new List<IReverseOrderPath>(), address);
-            });
-            textBox1.Text = "";
             result.Clear();
-        }
-        private void SearchExec(PointerInfo info, int depth, List<IReverseOrderPath> path, Address current)
-        {
-            Search(info, maxDepth, new List<IReverseOrderPath>(), current);
-            SearchEndDelegate de = new SearchEndDelegate(SearchEnd);
-            this.Invoke(de);
-        }
-        delegate void SearchEndDelegate();
-        private void SearchEnd()
-        {
-            PrintPath();
-            buttonNarrowDown.Enabled = true;
-            System.Media.SystemSounds.Asterisk.Play();
-        }
+            textBox1.Text = "";
+            buttonRead.Enabled = false;
+            buttonSearch.Enabled = false;
+            buttonNarrowDown.Enabled = false;
+            SetProgressBar(0);
+            try
+            {
+                maxDepth = Convert.ToInt32(textBoxDepth.Text);
+                maxOffsetNum = Convert.ToInt32(textBoxOffsetNum.Text);
+                maxOffsetAddress = Convert.ToInt32(textBoxOffsetAddress.Text, 16);
+                long heapStart = Convert.ToInt64(dataGridView1.Rows[0].Cells[3].Value.ToString(), 16);
+                long targetAddress = Convert.ToInt64(dataGridView1.Rows[0].Cells[5].Value.ToString(), 16);
+                Address address = new Address(MemoryType.HEAP, targetAddress - heapStart);
 
-        delegate void AddResultDelegate(List<IReverseOrderPath> path);
-        private void AddResult(List<IReverseOrderPath> path)
-        {
-            result.Add(path);
+                if (maxOffsetNum <= 0)
+                {
+                    MessageBox.Show("Offset Num must be greater than 0", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                else if (maxOffsetAddress < 0)
+                {
+                    MessageBox.Show("Offset Range must be greater or equal to 0", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                else {
+                    buttonCancel.Enabled = true;
+                    
+                    cancel = new CancellationTokenSource();
+                    Progress<double> prog = new Progress<double>(AddProgressBar);
+
+                    await Task.Run(() =>
+                    {
+                        Search(cancel.Token, prog,100.0, info, maxDepth, new List<IReverseOrderPath>(), address, result);
+                    });
+
+                    SetProgressBar(100);
+                    PrintPath();
+                    System.Media.SystemSounds.Asterisk.Play();
+
+                    buttonNarrowDown.Enabled = true;
+                }
+            }
+            catch (System.OperationCanceledException ex)
+            {
+                SetProgressBar(0);
+                System.Media.SystemSounds.Asterisk.Play();
+            }
+            catch (Exception ex)
+            {
+                SetProgressBar(0);
+                MessageBox.Show("Read Failed" + Environment.NewLine + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                buttonCancel.Enabled = false;
+                cancel.Dispose();
+            }
+
+            buttonRead.Enabled = true;
+            buttonSearch.Enabled = true;
         }
         private void PrintPath()
         {
@@ -123,16 +167,35 @@ namespace PointerSearcher
                 textBox1.Text = "not found";
             }
         }
-        private void Search(PointerInfo info, int depth, List<IReverseOrderPath> path, Address current)
+        private void Search(CancellationToken token, IProgress<double> prog,double progAddValue,PointerInfo info,int depth, List<IReverseOrderPath> path, Address current, List<List<IReverseOrderPath>> result)
         {
             IComparable<Address> icurrent = current;
             int nearest_index = info.FindNearest(icurrent);
-            for (int i = nearest_index; (i >= 0) && (i > nearest_index - maxOffsetNum); i--)
+            int currentOffsetNum = 1;
+
+            const double reportMin = 5;
+            double progAddEach = progAddValue / maxOffsetNum;
+            if (progAddEach < reportMin)
             {
+                progAddEach = 0;
+            }
+
+            for (int i = nearest_index; i > nearest_index - maxOffsetNum; i--)
+            {
+                if (token.IsCancellationRequested)
+                {
+                    token.ThrowIfCancellationRequested();
+                }
+                if (i<0)
+                {
+                    if (progAddEach != 0) { prog.Report(progAddEach); }
+                    continue;
+                }
                 Address nearest = info.pointedList[i].addr;
                 long offset = current.OffsetFrom(nearest);
                 if (IsLoop(path, nearest) || (offset >= maxOffsetAddress))
                 {
+                    if (progAddEach != 0) { prog.Report(progAddEach); }
                     continue;
                 }
                 if (offset > 0)
@@ -141,10 +204,24 @@ namespace PointerSearcher
                     add.addrMemo.Add(0, nearest);
                     path.Add(add);
                 }
+
+                double progAddNest = progAddEach / info.pointedList.Count;
+                if (progAddNest < reportMin)
+                {
+                    progAddNest = 0;
+                }
+
                 foreach (Address next in info.pointedList[i].pointedfrom)
                 {
+                    if (token.IsCancellationRequested)
+                    {
+                        token.ThrowIfCancellationRequested();
+                    }
+
                     if (IsLoop(path, next))
                     {
+                        if (progAddNest != 0) { prog.Report(progAddNest); }
+
                         continue;
                     }
                     ReverseOrderPathPointerJump add = new ReverseOrderPathPointerJump();
@@ -155,24 +232,31 @@ namespace PointerSearcher
                     {
                         ReverseOrderPathOffset frommain = new ReverseOrderPathOffset(next.offset);
                         path.Add(frommain);
-                        AddResultDelegate de = new AddResultDelegate(AddResult);
-                        this.Invoke(de, new List<IReverseOrderPath>(path));
+                        result.Add(new List<IReverseOrderPath>(path));
                         path.RemoveAt(path.Count - 1);
+                        if (progAddNest != 0) { prog.Report(progAddNest); }
                     }
                     else
                     {
                         if (depth > 0)
                         {
-                            Search(info, depth - 1, path, next);
+                            Search(token,prog, progAddNest, info, depth - 1, path, next,result);
+                        }
+                        else
+                        {
+                            if (progAddNest != 0) { prog.Report(progAddNest); }
                         }
                     }
                     path.RemoveAt(path.Count - 1);
                 }
+                if ((progAddEach!=0) && (progAddNest == 0)) { prog.Report(progAddEach); }
                 if (offset > 0)
                 {
                     path.RemoveAt(path.Count - 1);
                 }
+                currentOffsetNum++;
             }
+            if ((progAddEach == 0)&&(progAddValue!=0)) { prog.Report(progAddValue); }
         }
         private bool IsLoop(List<IReverseOrderPath> path, Address checkAddress)
         {
@@ -205,43 +289,126 @@ namespace PointerSearcher
             }
         }
 
-        private void buttonNarrowDown_Click(object sender, EventArgs e)
+        private async void buttonNarrowDown_Click(object sender, EventArgs e)
         {
-            Dictionary<IDumpDataReader, long> dumps = new Dictionary<IDumpDataReader, long>();
-            for (int i = 1; i < dataGridView1.Rows.Count-1; i++)
-            {
-                DataGridViewRow row = dataGridView1.Rows[i];
-                IDumpDataReader reader = CreateDumpDataReader(row);
-                if( reader != null) {
-                    long target = Convert.ToInt64(row.Cells[5].Value.ToString(), 16);
 
-                    dumps.Add(reader, target);
-                }
-            }
-            for (int i = 0; i < result.Count; i++)
+            try
             {
-                List<IReverseOrderPath> path = result[i];
+                SetProgressBar(0);
+                Dictionary<IDumpDataReader, long> dumps = new Dictionary<IDumpDataReader, long>();
+                for (int i = 1; i < dataGridView1.Rows.Count; i++)
+                {
+                    DataGridViewRow row = dataGridView1.Rows[i];
+                    ClearRowBackColor(row);
+                    if ( IsBlankRow(row))
+                    {
+                        continue;
+                    }
+                    IDumpDataReader reader = CreateDumpDataReader(row);
+                    if (reader != null)
+                    {
+                        long target = Convert.ToInt64(row.Cells[5].Value.ToString(), 16);
+
+                        dumps.Add(reader, target);
+                    }
+                }
+                if (dumps.Count == 0)
+                {
+                    throw new Exception("Fill out 2nd line to narrow down");
+                }
+                buttonRead.Enabled = false;
+                buttonSearch.Enabled = false;
+                buttonNarrowDown.Enabled = false;
+                buttonCancel.Enabled = true;
+
+                cancel = new CancellationTokenSource();
+                Progress<int> prog = new Progress<int>(SetProgressBar);
+
+                List<List<IReverseOrderPath>> copyList = new List<List<IReverseOrderPath>>(result);
+
+                result = await Task.Run(() => NarrowDown(cancel.Token, prog, result, dumps));
+
+                PrintPath();
+                SetProgressBar(100);
+                System.Media.SystemSounds.Asterisk.Play();
+            }
+            catch (System.OperationCanceledException ex)
+            {
+                SetProgressBar(0);
+                System.Media.SystemSounds.Asterisk.Play();
+            }
+            catch (Exception ex)
+            {
+                SetProgressBar(0);
+                MessageBox.Show(Environment.NewLine + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                if (cancel != null)
+                {
+                    cancel.Dispose();
+                }
+
+                buttonRead.Enabled = true;
+                buttonSearch.Enabled = true;
+                buttonNarrowDown.Enabled = true;
+                buttonCancel.Enabled = false;
+            }
+        }
+        private async Task<List<List<IReverseOrderPath>>> NarrowDown(CancellationToken token, IProgress<int> prog,List<List<IReverseOrderPath>> list, Dictionary<IDumpDataReader, long> dumps)
+        {
+            int totalCount = list.Count;
+            int checkedCount = 0;
+            int reportMin = 5;//report by 5%
+            int reportCount = (totalCount + 100 / reportMin - 1) / (100/ reportMin); //report every this count of path checked
+
+            List<List<IReverseOrderPath>> ndlist = new List<List<IReverseOrderPath>>(list);
+            for (int i = 0; i < ndlist.Count; i++)
+            {
+                List<IReverseOrderPath> path = ndlist[i];
                 foreach (IDumpDataReader dump in dumps.Keys)
                 {
-                    try
+                    if (token.IsCancellationRequested)
                     {
-                        if (dump.TryToParseAbs(path) != dumps[dump])
-                        {
-                            result.Remove(path);
-                            i--;
-                            break;
-                        }
+                        token.ThrowIfCancellationRequested();
                     }
-                    catch
+                    long parseAddress = await Task.Run(() => dump.TryToParseAbs(path));
+                    if (parseAddress != dumps[dump])
                     {
-                        result.Remove(path);
+                        ndlist.Remove(path);
                         i--;
                         break;
                     }
                 }
+                checkedCount++;
+                if ((checkedCount % reportCount)==0) {
+                    prog.Report( 100 * checkedCount / totalCount);
+                }
             }
-            PrintPath();
-            System.Media.SystemSounds.Asterisk.Play();
+            prog.Report(100);
+            return ndlist;
+        }
+        private bool IsBlankRow(DataGridViewRow row)
+        {
+            for (int i = 0; i <= 5; i++)
+            {
+                if (row.Cells[i].Value == null)
+                {
+                    continue;
+                }
+                if (row.Cells[i].Value.ToString() != "")
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        private void ClearRowBackColor(DataGridViewRow row)
+        {
+            for (int i = 0; i <= 5; i++)
+            {
+                row.Cells[i].Style.BackColor = Color.White;
+            }
         }
         private IDumpDataReader CreateDumpDataReader(DataGridViewRow row)
         {
@@ -351,6 +518,28 @@ namespace PointerSearcher
         {
             dataGridView1.Rows[e.RowIndex].Cells[e.ColumnIndex].Style.BackColor = Color.White;
             dataGridView1.BeginEdit(true);
+        }
+        private void SetProgressBar(int percent)
+        {
+            progressBar1.Value = percent;
+            progressTotal = percent;
+        }
+        private void AddProgressBar(double percent)
+        {
+            progressTotal += percent;
+            if(progressTotal> 100)
+            {
+                progressTotal = 100;
+            }
+            progressBar1.Value = (int)progressTotal;
+        }
+
+        private void buttonCancel_Click_1(object sender, EventArgs e)
+        {
+            if (cancel != null)
+            {
+                cancel.Cancel();
+            }
         }
     }
 }

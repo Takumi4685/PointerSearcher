@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace PointerSearcher
 {
@@ -68,10 +70,8 @@ namespace PointerSearcher
             heapStartAddress = heapStart;
             heapEndAddress = heapEnd;
             buffer = new byte[8];
-            indices = new List<NoexsDumpIndex>();
+            indices = null;
             infos = new List<NoexsMemoryInfo>();
-
-            ReadIndicate();
         }
         ~NoexsDumpDataReader()
         {
@@ -120,6 +120,7 @@ namespace PointerSearcher
 
         private void ReadIndicate()
         {
+            indices = new List<NoexsDumpIndex>();
             fileStream.BaseStream.Seek(0, SeekOrigin.Begin);
 
             if (ReadBigEndianInt32() != 0x4E444D50)
@@ -145,15 +146,22 @@ namespace PointerSearcher
                 indices.Add(new NoexsDumpIndex(addr, pos, size));
             }
         }
-        PointerInfo IDumpDataReader.Read()
+        PointerInfo IDumpDataReader.Read(CancellationToken token, IProgress<int> prog)
         {
             var sw = new System.Diagnostics.Stopwatch();
             sw.Start();
             PointerInfo pointerInfo = new PointerInfo();
             const int readMaxSize = 4096;
-            
-            foreach (NoexsDumpIndex x in indices)
+
+            ReadIndicate();
+
+            //foreach (NoexsDumpIndex x in indices)
+            for(int index=0;index<indices.Count;index++)
             {
+                NoexsDumpIndex x = indices[index];
+                if (token.IsCancellationRequested) {
+                    token.ThrowIfCancellationRequested();
+                }
                 if (!IsMainHeapAddress(x.address))
                 {
                     continue;
@@ -166,6 +174,10 @@ namespace PointerSearcher
 
                 while (rem > 0)
                 {
+                    if (token.IsCancellationRequested)
+                    {
+                        token.ThrowIfCancellationRequested();
+                    }
                     int readSize = readMaxSize;
                     if (rem < readSize)
                     {
@@ -187,6 +199,7 @@ namespace PointerSearcher
                         address += 8;
                     }
                 }
+                prog.Report((int)(100 * ( index + 1) / indices.Count));
             }
             pointerInfo.MakeList();
             sw.Stop();
@@ -194,41 +207,10 @@ namespace PointerSearcher
             //3.28.24
             return pointerInfo;
         }
-        /*PointerInfo IDumpDataReader.Read()
-        {
-            var sw = new System.Diagnostics.Stopwatch();
-            sw.Start();
-            PointerInfo pointerInfo = new PointerInfo();
-            foreach (NoexsDumpIndex x in indices)
-            {
-                if (!IsMainHeapAddress(x.address))
-                {
-                    continue;
-                }
-                //pickup pointer from heap
-                fileStream.BaseStream.Seek(x.pos, SeekOrigin.Begin);
-                MemoryType type = GetMemoryType(x.address);
-                long startAddress = GetStartAddress(type);
-                for (long i = 0; i < x.size / 8; i++)
-                {
-                    long tmp_data = ReadLittleEndianInt64();
-                    if (IsHeapAddress(tmp_data))
-                    {
-                        Address from = new Address(type, x.address + i * 8 - startAddress);
-                        MemoryType toType = GetMemoryType(tmp_data);
-                        Address to = new Address(toType, tmp_data - heapStartAddress);
-                        pointerInfo.AddPointer(from, to);
-                    }
-                }
-            }
-            pointerInfo.MakeList();
-            sw.Stop();
-            TimeSpan ts = sw.Elapsed;
-            //3.34.23
-            return pointerInfo;
-        }*/
         long IDumpDataReader.TryToParseAbs(List<IReverseOrderPath> path)
         {
+            ReadIndicate();
+
             long address = mainStartAddress;
             for (int i = path.Count-1; i >=0; i--)
             {
@@ -236,7 +218,7 @@ namespace PointerSearcher
                 address = path[i].ParseAddress(address, data);
                 if ((address == 0) || !IsMainHeapAddress(address))
                 {
-                    throw new Exception("out of memory range:" + address.ToString("X"));
+                    return 0;
                 }
             }
             return address;
