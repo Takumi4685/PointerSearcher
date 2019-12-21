@@ -238,7 +238,7 @@ namespace PointerSearcher
                     }
                     else
                     {
-                        if (depth > 0)
+                        if (depth > 1)
                         {
                             Search(token,prog, progAddNest, info, depth - 1, path, next,result);
                         }
