@@ -24,7 +24,7 @@ Offset Range : Search range from target/pointer located address
 Offset Num : Search num of nearest pointed address from target/pointer located address  
 For example,If Offset Num=1,you will find`[[main+B000]+10]+100` in the case below  
 And if Offset Num=2,you will find`[[main+A000]+20]+200` in addition  
-![Offset Num](https://user-images.githubusercontent.com/59052622/71303457-58fe1a00-23fc-11ea-9031-4edc62a95fd0.png)  
+![num](https://user-images.githubusercontent.com/59052622/71303971-1b50bf80-2403-11ea-87f0-478df77e75c7.png)  
 calculating cost will be O(N<sup>N*D</sup>) (D:Max Depth,N:Offset Num)  
 1. If too many results,get another dump data and fill out 2nd and subsequent row,select `Narrow Down Result`
 
