@@ -112,9 +112,11 @@ namespace PointerSearcher
                     cancel = new CancellationTokenSource();
                     Progress<double> prog = new Progress<double>(AddProgressBar);
 
+                    FindPath find = new FindPath(maxOffsetNum, maxOffsetAddress);
+
                     await Task.Run(() =>
                     {
-                        Search(cancel.Token, prog,100.0, info, maxDepth, new List<IReverseOrderPath>(), address, result);
+                        find.Search(cancel.Token, prog,100.0, info, maxDepth, new List<IReverseOrderPath>(), address, result);
                     });
 
                     SetProgressBar(100);
@@ -166,107 +168,6 @@ namespace PointerSearcher
             {
                 textBox1.Text = "not found";
             }
-        }
-        private void Search(CancellationToken token, IProgress<double> prog,double progAddValue,PointerInfo info,int depth, List<IReverseOrderPath> path, Address current, List<List<IReverseOrderPath>> result)
-        {
-            IComparable<Address> icurrent = current;
-            int nearest_index = info.FindNearest(icurrent);
-            int currentOffsetNum = 1;
-
-            const double reportMin = 0.02;
-            double progAddEach = progAddValue / maxOffsetNum;
-            if (progAddEach < reportMin)
-            {
-                progAddEach = 0;
-            }
-
-            for (int i = nearest_index; i > nearest_index - maxOffsetNum; i--)
-            {
-                if (token.IsCancellationRequested)
-                {
-                    token.ThrowIfCancellationRequested();
-                }
-                if (i<0)
-                {
-                    if (progAddEach != 0) { prog.Report(progAddEach); }
-                    continue;
-                }
-                Address nearest = info.pointedList[i].addr;
-                long offset = current.OffsetFrom(nearest);
-                if (IsLoop(path, nearest) || (offset >= maxOffsetAddress))
-                {
-                    if (progAddEach != 0) { prog.Report(progAddEach); }
-                    continue;
-                }
-                if (offset > 0)
-                {
-                    ReverseOrderPathOffset add = new ReverseOrderPathOffset(offset);
-                    path.Add(add);
-                }
-
-                double progAddNest = progAddEach / info.pointedList[i].pointedfrom.Count;
-                if (progAddNest < reportMin)
-                {
-                    progAddNest = 0;
-                }
-
-                foreach (Address next in info.pointedList[i].pointedfrom)
-                {
-                    if (token.IsCancellationRequested)
-                    {
-                        token.ThrowIfCancellationRequested();
-                    }
-
-                    if (IsLoop(path, next))
-                    {
-                        if (progAddNest != 0) { prog.Report(progAddNest); }
-
-                        continue;
-                    }
-                    ReverseOrderPathPointerJump add = new ReverseOrderPathPointerJump();
-                    path.Add(add);
-
-                    if (next.type == MemoryType.MAIN)
-                    {
-                        ReverseOrderPathOffset frommain = new ReverseOrderPathOffset(next.offset);
-                        path.Add(frommain);
-                        result.Add(new List<IReverseOrderPath>(path));
-                        path.RemoveAt(path.Count - 1);
-                        if (progAddNest != 0) { prog.Report(progAddNest); }
-                    }
-                    else
-                    {
-                        if (depth > 1)
-                        {
-                            Search(token,prog, progAddNest, info, depth - 1, path, next,result);
-                        }
-                        else
-                        {
-                            if (progAddNest != 0) { prog.Report(progAddNest); }
-                        }
-                    }
-                    path.RemoveAt(path.Count - 1);
-                }
-                if ((progAddEach!=0) && (progAddNest == 0)) { prog.Report(progAddEach); }
-                if (offset > 0)
-                {
-                    path.RemoveAt(path.Count - 1);
-                }
-                currentOffsetNum++;
-            }
-            if ((progAddEach == 0)&&(progAddValue!=0)) { prog.Report(progAddValue); }
-        }
-        private bool IsLoop(List<IReverseOrderPath> path, Address checkAddress)
-        {
-            /*IComparable<Address> iaddress = checkAddress;
-            foreach (IReverseOrderPath x in path)
-            {
-                if (iaddress.CompareTo(x.addrMemo[0]) == 0)
-                {
-                    return true;
-                }
-            }*/
-            return false;
         }
 
         private void dataGridView1_CellBeginEdit(object sender, DataGridViewCellCancelEventArgs e)
@@ -324,7 +225,7 @@ namespace PointerSearcher
 
                 List<List<IReverseOrderPath>> copyList = new List<List<IReverseOrderPath>>(result);
 
-                result = await Task.Run(() => NarrowDown(cancel.Token, prog, result, dumps));
+                result = await Task.Run(() => FindPath.NarrowDown(cancel.Token, prog, result, dumps));
 
                 PrintPath();
                 SetProgressBar(100);
@@ -352,41 +253,6 @@ namespace PointerSearcher
                 buttonNarrowDown.Enabled = true;
                 buttonCancel.Enabled = false;
             }
-        }
-        private async Task<List<List<IReverseOrderPath>>> NarrowDown(CancellationToken token, IProgress<int> prog,List<List<IReverseOrderPath>> list, Dictionary<IDumpDataReader, long> dumps)
-        {
-            int totalCount = list.Count;
-            int checkedCount = 0;
-            int reportMin = 5;//report by 5%
-            int reportCount = (totalCount + 100 / reportMin - 1) / (100/ reportMin); //report every this count of path checked
-
-            reportCount = reportCount < 100 ? reportCount : 100;    //at least report every 100 times
-
-            List <List<IReverseOrderPath>> ndlist = new List<List<IReverseOrderPath>>(list);
-            for (int i = 0; i < ndlist.Count; i++)
-            {
-                List<IReverseOrderPath> path = ndlist[i];
-                foreach (IDumpDataReader dump in dumps.Keys)
-                {
-                    if (token.IsCancellationRequested)
-                    {
-                        token.ThrowIfCancellationRequested();
-                    }
-                    long parseAddress = await Task.Run(() => dump.TryToParseAbs(path));
-                    if (parseAddress != dumps[dump])
-                    {
-                        ndlist.Remove(path);
-                        i--;
-                        break;
-                    }
-                }
-                checkedCount++;
-                if ((checkedCount % reportCount)==0) {
-                    prog.Report( 100 * checkedCount / totalCount);
-                }
-            }
-            prog.Report(100);
-            return ndlist;
         }
         private bool IsBlankRow(DataGridViewRow row)
         {
