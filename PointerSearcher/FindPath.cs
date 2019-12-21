@@ -7,10 +7,8 @@ namespace PointerSearcher
     {
         public IReverseOrderPath()
         {
-            addrMemo = new Dictionary<int, Address>();
         }
         public abstract String ToString(String org);
-        public Dictionary<int, Address> addrMemo;   //keys = DumpData No.
         public abstract long ParseAddress(long currentAddress, long currentData);
     }
     class ReverseOrderPathOffset : IReverseOrderPath

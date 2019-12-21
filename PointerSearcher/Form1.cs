@@ -173,7 +173,7 @@ namespace PointerSearcher
             int nearest_index = info.FindNearest(icurrent);
             int currentOffsetNum = 1;
 
-            const double reportMin = 5;
+            const double reportMin = 0.02;
             double progAddEach = progAddValue / maxOffsetNum;
             if (progAddEach < reportMin)
             {
@@ -201,11 +201,10 @@ namespace PointerSearcher
                 if (offset > 0)
                 {
                     ReverseOrderPathOffset add = new ReverseOrderPathOffset(offset);
-                    add.addrMemo.Add(0, nearest);
                     path.Add(add);
                 }
 
-                double progAddNest = progAddEach / info.pointedList.Count;
+                double progAddNest = progAddEach / info.pointedList[i].pointedfrom.Count;
                 if (progAddNest < reportMin)
                 {
                     progAddNest = 0;
@@ -225,7 +224,6 @@ namespace PointerSearcher
                         continue;
                     }
                     ReverseOrderPathPointerJump add = new ReverseOrderPathPointerJump();
-                    add.addrMemo.Add(0, next);
                     path.Add(add);
 
                     if (next.type == MemoryType.MAIN)
@@ -362,7 +360,9 @@ namespace PointerSearcher
             int reportMin = 5;//report by 5%
             int reportCount = (totalCount + 100 / reportMin - 1) / (100/ reportMin); //report every this count of path checked
 
-            List<List<IReverseOrderPath>> ndlist = new List<List<IReverseOrderPath>>(list);
+            reportCount = reportCount < 100 ? reportCount : 100;    //at least report every 100 times
+
+            List <List<IReverseOrderPath>> ndlist = new List<List<IReverseOrderPath>>(list);
             for (int i = 0; i < ndlist.Count; i++)
             {
                 List<IReverseOrderPath> path = ndlist[i];
