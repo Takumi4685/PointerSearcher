@@ -61,6 +61,7 @@ namespace PointerSearcher
         private byte[] buffer = new byte[8];
         private List<NoexsDumpIndex> indices;
         private List<NoexsMemoryInfo> infos;
+        private Dictionary<long, long> readData;    //key:address,value:data
         public NoexsDumpDataReader(String path, long mainStart, long mainEnd, long heapStart, long heapEnd)
         {
             fileStream = new BinaryReader(new FileStream(path, FileMode.Open, FileAccess.Read));//System.Security.AccessControl.FileSystemRights.Read, FileShare.Read, 1024, FileOptions.SequentialScan));
@@ -71,6 +72,7 @@ namespace PointerSearcher
             buffer = new byte[8];
             indices = null;
             infos = new List<NoexsMemoryInfo>();
+            readData = new Dictionary<long, long>();
         }
         ~NoexsDumpDataReader()
         {
@@ -219,7 +221,16 @@ namespace PointerSearcher
             long address = mainStartAddress;
             for (int i = path.Count - 1; i >= 0; i--)
             {
-                long data = ReadLittleEndianInt64(address);
+                long data;
+                if (readData.ContainsKey(address))
+                {
+                    data = readData[address];
+                }
+                else
+                {
+                    data = ReadLittleEndianInt64(address);
+                    readData.Add(address, data);
+                }
                 address = path[i].ParseAddress(address, data);
                 if ((address == 0) || !IsMainHeapAddress(address))
                 {
