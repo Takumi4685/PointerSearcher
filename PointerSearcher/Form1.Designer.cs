@@ -228,7 +228,7 @@
             this.Controls.Add(this.textBox1);
             this.Controls.Add(this.buttonRead);
             this.Name = "Form1";
-            this.Text = "PointerSearcher 0.03";
+            this.Text = "PointerSearcher 0.04";
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

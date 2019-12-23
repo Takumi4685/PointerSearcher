@@ -121,7 +121,7 @@ namespace PointerSearcher
 
         private void ReadIndicate()
         {
-            if(indices != null)
+            if (indices != null)
             {
                 //if already read indices,skip reading
                 return;

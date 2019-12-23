@@ -26,7 +26,9 @@ For example,If Offset Num=1,you will find`[[main+B000]+10]+100` in the case belo
 And if Offset Num=2,you will find`[[main+A000]+20]+200` in addition  
 ![num](https://user-images.githubusercontent.com/59052622/71303971-1b50bf80-2403-11ea-87f0-478df77e75c7.png)  
 calculating cost will be O(N<sup>N*D</sup>) (D:Max Depth,N:Offset Num)  
-1. If too many results,get another dump data and fill out 2nd and subsequent row,select `Narrow Down Result`
+1. If too many results,get another dump data and fill out 2nd and subsequent row,select `Narrow Down Result`  
+If narrow down results with target address 0,tool only checks if pointer code can reaches heap region  
+If narrow down results with target address not 0,tool checks if pointer code can reaches target address  
 
 # link
 * tutorial(Japanese)  
@@ -37,6 +39,11 @@ https://zit866.hatenablog.com/entry/2019/12/17/012933
 * ZiT866 : thanks to making tutorial.
 
 # change log
+*v0.04*  
+[improve]change offset expression at least 2 digits to avoid noexs exception  
+[improve]support narrow down results with target address 0 to only checks if pointer code can reaches heap region  
+[improve]narrowing down results become faster  
+
 *v0.03*  
 [bugfix]actual search depth was MaxDepth+1 by mistake  
 [improve]change UI to show progress  
