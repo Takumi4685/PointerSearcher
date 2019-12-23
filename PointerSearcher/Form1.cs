@@ -41,7 +41,7 @@ namespace PointerSearcher
                 buttonRead.Enabled = false;
 
 
-                IDumpDataReader reader = CreateDumpDataReader(dataGridView1.Rows[0]);
+                IDumpDataReader reader = CreateDumpDataReader(dataGridView1.Rows[0],false);
                 if (reader == null)
                 {
                     throw new Exception("Invalid input" + Environment.NewLine + "Check highlighted cell");
@@ -204,7 +204,7 @@ namespace PointerSearcher
                     {
                         continue;
                     }
-                    IDumpDataReader reader = CreateDumpDataReader(row);
+                    IDumpDataReader reader = CreateDumpDataReader(row,true);
                     if (reader != null)
                     {
                         long target = Convert.ToInt64(row.Cells[5].Value.ToString(), 16);
@@ -277,7 +277,7 @@ namespace PointerSearcher
                 row.Cells[i].Style.BackColor = Color.White;
             }
         }
-        private IDumpDataReader CreateDumpDataReader(DataGridViewRow row)
+        private IDumpDataReader CreateDumpDataReader(DataGridViewRow row,bool allowUnknownTarget)
         {
             bool canCreate = true;
             String path = "";
@@ -370,8 +370,13 @@ namespace PointerSearcher
                 row.Cells[4].Style.BackColor = Color.Red;
                 canCreate = false;
             }
-            if ((target < heapStart) || (heapEnd < target))
+            if(allowUnknownTarget && (target == 0))
             {
+                //if target address is set to 0,it means unknown address.
+            }
+            else if ((target < heapStart) || (heapEnd <= target))
+            {
+                //if not unknown,target should be located at heap region
                 row.Cells[5].Style.BackColor = Color.Red;
                 canCreate = false;
             }

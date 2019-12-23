@@ -172,7 +172,25 @@ namespace PointerSearcher
                         token.ThrowIfCancellationRequested();
                     }
                     long parseAddress = await Task.Run(() => dump.TryToParseAbs(path));
-                    if (parseAddress != dumps[dump])
+                    long targetAddress = dumps[dump];
+                    bool remove = false;
+                    if (targetAddress == 0)
+                    {
+                        //if target address is 0,only check path is valid,can reach heap region
+                        if (!dump.IsHeap(parseAddress))
+                        {
+                            remove = true;
+                        }
+                    }
+                    else
+                    {
+                        //if target address isn't 0,check if parsed address is equal to target address
+                        if (parseAddress != targetAddress)
+                        {
+                            remove = true;
+                        }
+                    }
+                    if (remove)
                     {
                         ndlist.Remove(path);
                         i--;

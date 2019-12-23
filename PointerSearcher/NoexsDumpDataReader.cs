@@ -245,7 +245,10 @@ namespace PointerSearcher
             MemoryType type = GetMemoryType(address);
             return new Address(type, address - GetStartAddress(type));
         }
-
+        bool IDumpDataReader.IsHeap(long address)
+        {
+            return IsHeapAddress(address);
+        }
         private bool IsMainHeapAddress(long evalAddress)
         {
             if ((mainStartAddress <= evalAddress) && (evalAddress < mainEndAddress))

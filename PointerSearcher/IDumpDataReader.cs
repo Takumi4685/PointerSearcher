@@ -9,5 +9,6 @@ namespace PointerSearcher
         PointerInfo Read(CancellationToken token, IProgress<int> prog);
         long TryToParseAbs(List<IReverseOrderPath> path);
         Address TryToParseRel(List<IReverseOrderPath> path);
+        bool IsHeap(long address);
     }
 }
